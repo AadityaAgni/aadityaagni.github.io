@@ -1,0 +1,205 @@
+/* ── CS 180 portfolio — shared styles ───────────────────────────── */
+
+:root {
+  --bg:      #f7f1e3;
+  --bg-alt:  #f1e8d5;
+  --card:    #fffdf7;
+  --fg:      #2a2723;
+  --muted:   #8a8175;
+  --rule:    #e0d4bb;
+  --accent:  #b0592f;
+  --accent-soft: #cf8a5f;
+  --shadow:  0 1px 2px rgba(90,70,40,.06), 0 8px 24px rgba(90,70,40,.07);
+  --shadow-lift: 0 2px 4px rgba(90,70,40,.08), 0 18px 40px rgba(90,70,40,.13);
+  --serif: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+  --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background:
+    radial-gradient(1200px 600px at 50% -10%, var(--bg-alt), transparent 70%),
+    var(--bg);
+  color: var(--fg);
+  font: 16px/1.65 var(--serif);
+  -webkit-font-smoothing: antialiased;
+}
+
+.wrap { max-width: 1000px; margin: 0 auto; padding: 64px 24px 96px; }
+
+/* ── eyebrow / small caps label ─────────────────────────────────── */
+.eyebrow {
+  font-family: var(--sans);
+  font-size: .7rem;
+  font-weight: 600;
+  letter-spacing: .18em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+/* ── page header ────────────────────────────────────────────────── */
+.page-head { text-align: center; margin-bottom: 8px; }
+.page-head h1 {
+  font-size: clamp(2.1rem, 5vw, 3.1rem);
+  font-weight: normal;
+  letter-spacing: -.02em;
+  line-height: 1.1;
+  margin: 14px 0 12px;
+}
+.page-head .tagline {
+  margin: 0 auto;
+  max-width: 46ch;
+  color: var(--muted);
+  font-size: 1.02rem;
+}
+.page-head::after {
+  content: "";
+  display: block;
+  width: 72px; height: 2px;
+  margin: 30px auto 0;
+  background: linear-gradient(90deg, transparent, var(--accent-soft), transparent);
+}
+
+/* ── back link ──────────────────────────────────────────────────── */
+.back {
+  display: inline-block;
+  font-family: var(--sans);
+  font-size: .78rem;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--muted);
+  text-decoration: none;
+  margin-bottom: 34px;
+  transition: color .18s ease;
+}
+.back:hover { color: var(--accent); }
+.back::before { content: "\2190"; margin-right: 8px; }
+
+/* ── project card grid (home) ───────────────────────────────────── */
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 26px;
+  margin-top: 52px;
+}
+
+.card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  background: var(--card);
+  border: 1px solid var(--rule);
+  border-radius: 10px;
+  overflow: hidden;
+  text-decoration: none;
+  color: inherit;
+  box-shadow: var(--shadow);
+  transition: transform .22s ease, box-shadow .22s ease, border-color .22s ease;
+}
+.card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-lift);
+  border-color: var(--accent-soft);
+}
+
+.card-thumb {
+  aspect-ratio: 3 / 2;
+  background: var(--bg-alt);
+  overflow: hidden;
+  border-bottom: 1px solid var(--rule);
+}
+.card-thumb img {
+  width: 100%; height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: transform .5s cubic-bezier(.2,.7,.3,1);
+}
+.card:hover .card-thumb img { transform: scale(1.045); }
+
+.card-body { padding: 18px 20px 22px; }
+.card-body h3 {
+  font-size: 1.12rem;
+  font-weight: normal;
+  letter-spacing: -.01em;
+  margin: 8px 0 6px;
+}
+.card-body p {
+  margin: 0;
+  color: var(--muted);
+  font-size: .92rem;
+  line-height: 1.5;
+}
+
+/* placeholder cards for unreleased projects */
+.card.soon {
+  pointer-events: none;
+  background: transparent;
+  border-style: dashed;
+  box-shadow: none;
+}
+.card.soon .card-thumb {
+  background:
+    repeating-linear-gradient(45deg, transparent 0 10px, rgba(176,89,47,.05) 10px 20px),
+    var(--bg-alt);
+  border-bottom-style: dashed;
+}
+.card.soon .card-body h3 { color: var(--muted); }
+
+/* ── project page sections ──────────────────────────────────────── */
+section { margin-top: 60px; }
+section > h2 {
+  font-size: 1.3rem;
+  font-weight: normal;
+  letter-spacing: -.01em;
+  margin: 0 0 24px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--rule);
+}
+section > h2 .eyebrow { display: block; margin-bottom: 7px; }
+
+/* ── image rows ─────────────────────────────────────────────────── */
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  justify-content: center;
+  align-items: flex-start;
+}
+.row img, .solo img {
+  height: 340px;
+  width: auto;
+  max-width: 100%;
+  display: block;
+  background: var(--card);
+  padding: 7px;
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+  box-shadow: var(--shadow);
+  transition: transform .22s ease, box-shadow .22s ease;
+}
+.row img:hover, .solo img:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-lift);
+}
+.solo { text-align: center; }
+.solo img { height: 460px; margin: 0 auto; }
+
+/* ── footer ─────────────────────────────────────────────────────── */
+footer {
+  margin-top: 84px;
+  padding-top: 20px;
+  border-top: 1px solid var(--rule);
+  text-align: center;
+  color: var(--muted);
+  font-family: var(--sans);
+  font-size: .8rem;
+  letter-spacing: .06em;
+}
+
+@media (max-width: 640px) {
+  .wrap { padding: 40px 18px 64px; }
+  .row img { height: 240px; }
+  .solo img { height: 320px; }
+}
