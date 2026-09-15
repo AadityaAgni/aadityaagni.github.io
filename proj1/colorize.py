@@ -7,6 +7,7 @@ import cv2
 import utils
 
 import argparse
+import os
 
 def align_at_res(image, reference, shift_x_range, shift_y_range):
     # Normalize images
@@ -46,7 +47,7 @@ def align_single_channel(image, reference):
     print(f"Displacement (x, y): {shift}")
     return utils.shift_image(image, shift[0], shift[1])
 
-def main(imname='./cathedral.jpg', single_scale=False):
+def main(imname='./cathedral.jpg', single_scale=False, out='./out_fname.jpg'):
     # Load the grayscale image
     print(f"Loading image: {imname}")
     im = utils.load_image(imname)
@@ -76,12 +77,14 @@ def main(imname='./cathedral.jpg', single_scale=False):
     print("Saving the colorized image...")
     out_uint8 = np.clip(im_out_np * 255.0, 0, 255).astype(np.uint8)
     out_bgr = cv2.cvtColor(out_uint8, cv2.COLOR_RGB2BGR)
-    fname = './out_fname.jpg'
-    cv2.imwrite(fname, out_bgr)
+    os.makedirs(os.path.dirname(out) or '.', exist_ok=True)
+    cv2.imwrite(out, out_bgr)
+    print(f"Saved to {out}")
     
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description='Align color channels of a grayscale image.')
-    parser.add_argument('--imname', type=str, default='./church.tif', help='Path to the input grayscale image.')
-    parser.add_argument('--single-scale', action='store_true', help='Exhaustive search at full resolution (no pyramid).')
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--imname', type=str, default='./church.tif')
+    parser.add_argument('--single-scale', action='store_true')
+    parser.add_argument('--out', type=str, default='./out_fname.jpg')
     args = parser.parse_args()
-    main(args.imname, args.single_scale)
+    main(args.imname, args.single_scale, args.out)
