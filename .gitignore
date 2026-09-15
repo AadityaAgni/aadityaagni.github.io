@@ -1,0 +1,9 @@
+# raw input plates (~870 MB) — not needed by the site
+proj1/data/
+
+# python / script outputs
+__pycache__/
+*.pyc
+proj1/out_fname.jpg
+
+.DS_Store

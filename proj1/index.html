@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Project 1: Images of the Russian Empire — CS 180</title>
+<link rel="stylesheet" href="../style.css">
+<style>
+  /* ── proj1 additions, built on the shared palette ──────────────── */
+  .prose { max-width: none; }
+  .prose p { margin: 0 0 16px; }
+  .prose p:last-child { margin-bottom: 0; }
+  .prose code {
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+    font-size: .86em;
+    background: var(--bg-alt);
+    border: 1px solid var(--rule);
+    border-radius: 3px;
+    padding: .08em .34em;
+  }
+
+  .figs {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 26px 22px;
+  }
+  .figs.two { grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); }
+  .figs.large { grid-template-columns: 1fr; gap: 44px; }
+  .figs.large figure { width: min(100%, 78vh); margin: 0 auto; }
+  .figs figure { margin: 0; }
+  .figs img {
+    width: 100%;
+    height: auto;
+    display: block;
+    background: var(--card);
+    padding: 6px;
+    border: 1px solid var(--rule);
+    border-radius: 4px;
+    box-shadow: var(--shadow);
+    transition: transform .22s ease, box-shadow .22s ease;
+  }
+  .figs img:hover { transform: translateY(-3px); box-shadow: var(--shadow-lift); }
+  figcaption {
+    font-family: var(--sans);
+    font-size: .78rem;
+    line-height: 1.5;
+    color: var(--muted);
+    margin-top: 9px;
+    text-align: center;
+  }
+  figcaption b {
+    display: block;
+    font-weight: 600;
+    letter-spacing: .04em;
+    color: var(--fg);
+    margin-bottom: 2px;
+  }
+  figcaption .d { white-space: nowrap; }
+
+  table.offsets {
+    width: 100%;
+    border-collapse: collapse;
+    font-family: var(--sans);
+    font-size: .84rem;
+  }
+  table.offsets th, table.offsets td {
+    text-align: left;
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--rule);
+  }
+  table.offsets th {
+    font-weight: 600;
+    font-size: .72rem;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    color: var(--accent);
+  }
+  table.offsets td.num { font-variant-numeric: tabular-nums; white-space: nowrap; }
+  table.offsets tr.sep td { border-top: 2px solid var(--rule); }
+  table.offsets em { color: var(--muted); font-style: normal; font-size: .9em; }
+  figcaption a, .prose a { color: var(--accent); text-decoration: none; border-bottom: 1px solid var(--rule); }
+  figcaption a:hover, .prose a:hover { border-bottom-color: var(--accent); }
+  table.offsets caption {
+    caption-side: bottom;
+    text-align: left;
+    padding-top: 12px;
+    color: var(--muted);
+    font-size: .78rem;
+  }
+
+  .callout {
+    border-left: 3px solid var(--accent-soft);
+    background: var(--bg-alt);
+    border-radius: 0 6px 6px 0;
+    padding: 16px 20px;
+    margin: 24px 0 0;
+  }
+  .callout p { margin: 0 0 12px; }
+  .callout p:last-child { margin-bottom: 0; }
+
+  .note {
+    font-family: var(--sans);
+    font-size: .8rem;
+    color: var(--muted);
+    margin: 14px 0 0;
+  }
+  .note code { font-size: .92em; }
+
+  h3.sub {
+    font-family: var(--sans);
+    font-size: .78rem;
+    font-weight: 600;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin: 40px 0 18px;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <a class="back" href="../index.html">All projects</a>
+
+  <header class="page-head">
+    <span class="eyebrow">Project 1</span>
+    <h1>Images of the Russian&nbsp;Empire</h1>
+    <p class="tagline">Colorizing the Prokudin-Gorskii photo collection by aligning three glass-plate exposures into a single color photograph.</p>
+  </header>
+
+  <!-- ────────────────────────────────────────────────────────── -->
+  <section>
+    <h2><span class="eyebrow">Overview</span>The Problem</h2>
+    <div class="prose">
+      <p>Sergei Prokudin-Gorskii photographed the Russian Empire with three exposures, each through a different color filter. In order to align this, the three channels must be translated relative to each other to minimize the small differences in camera position between them. The goal of this project is to implement a simple alignment algorithm and apply it to a set of example images.</p>
+    </div>
+  </section>
+
+  <!-- ────────────────────────────────────────────────────────── -->
+  <section>
+    <h2><span class="eyebrow">Method</span>How Alignment Works</h2>
+    <div class="prose">
+      <p><b>Similarity metric.</b> Channels are compared with the <b>L2 distance</b> (sum of squared differences) after each is normalized to zero mean and unit variance. On normalized images this is essentially equivalent to <b>Normalized Cross-Correlation (NCC)</b>: minimizing the L2 distance maximizes the dot product of the two normalized images.</p>
+      <p><b>Border cropping.</b> The scanned plates carry thick black and white borders that differ between channels. Because the L2 distance squares every difference, those saturated edges dominate the score and drag the optimum away from the true alignment. Scoring is therefore restricted to the central region, trimming the border from each image</p>
+      <p><b>Per-image normalization.</b> Each channel is standardized to zero mean and unit variance before comparison. Without this the score is dominated by a constant brightness offset between plates that carries no alignment information at all. For example, in <code>church.tif</code>, the blue region has a much higher brightness, leading to it dominating the score.</p>
+      <p><b>Multi-scale pyramid.</b> Full-resolution glass plates are ~3600&nbsp;px on a side, with displacements up to ~180&nbsp;px. An exhaustive search at that scale would be computationally expensive, so an image pyramid is built by repeatedly halving the image until it reaches a minimum size. The lowest level searches a wide <code>[-40, 40]</code> window, and we slowly upscale and refine the image by using the displacement found below it to lower the search space. Because each level is exactly a factor of two, doubling the previous estimate is a near-perfect prediction, so a handful of candidates suffices.</p>
+    </div>
+  </section>
+
+  <!-- ────────────────────────────────────────────────────────── -->
+  <section>
+    <h2><span class="eyebrow">Part 1</span>Single-Scale Alignment &mdash; Low-Resolution JPEGs</h2>
+    <div class="prose">
+      <p>Exhaustive search over a <code>[-15, 15]</code> window at full resolution, minimizing the normalized L2 distance (essentially NCC). Displacements are given as <span class="d">(x, y)</span>, positive x right and positive y down, relative to the blue channel.</p>
+    </div>
+    <div class="figs large" style="margin-top:26px">
+      <figure>
+        <img src="assets/cathedral.jpg" alt="Cathedral, colorized">
+        <figcaption><b>cathedral.jpg</b>
+          <span class="d">G (2, 5)</span> &nbsp;&middot;&nbsp; <span class="d">R (3, 12)</span></figcaption>
+      </figure>
+      <figure>
+        <img src="assets/monastery.jpg" alt="Monastery, colorized">
+        <figcaption><b>monastery.jpg</b>
+          <span class="d">G (2, &minus;3)</span> &nbsp;&middot;&nbsp; <span class="d">R (3, 3)</span></figcaption>
+      </figure>
+      <figure>
+        <img src="assets/tobolsk.jpg" alt="Tobolsk, colorized">
+        <figcaption><b>tobolsk.jpg</b>
+          <span class="d">G (3, 3)</span> &nbsp;&middot;&nbsp; <span class="d">R (3, 7)</span></figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <!-- ────────────────────────────────────────────────────────── -->
+  <section>
+    <h2><span class="eyebrow">Part 2</span>Multi-Scale Pyramid &mdash; Full-Resolution Glass Plates</h2>
+    <div class="prose">
+      <p>All fourteen provided example images, aligned at full <code>.tif</code> resolution using the image pyramid described above. The three low-resolution JPEGs are included again here for completeness.</p>
+    </div>
+    <p class="note">Compared to single-scale search, the pyramid aligns a full-size <code>.tif</code> about 200&times; faster (~15&nbsp;s vs. ~52&nbsp;min on <code>church.tif</code>).</p>
+    <div class="figs large" style="margin-top:26px">
+      <figure><img src="assets/church.jpg" alt="Church"><figcaption><b>church</b><span class="d">G (4, 25)</span> &middot; <span class="d">R (&minus;4, 58)</span></figcaption></figure>
+      <figure><img src="assets/emir.jpg" alt="Emir of Bukhara"><figcaption><b>emir</b><span class="d">G (24, 49)</span> &middot; <span class="d">R (42, 105)</span></figcaption></figure>
+      <figure><img src="assets/harvesters.jpg" alt="Harvesters"><figcaption><b>harvesters</b><span class="d">G (17, 60)</span> &middot; <span class="d">R (14, 124)</span></figcaption></figure>
+      <figure><img src="assets/icon.jpg" alt="Icon"><figcaption><b>icon</b><span class="d">G (17, 41)</span> &middot; <span class="d">R (22, 89)</span></figcaption></figure>
+      <figure><img src="assets/melons.jpg" alt="Melons"><figcaption><b>melons</b><span class="d">G (10, 81)</span> &middot; <span class="d">R (13, 177)</span></figcaption></figure>
+      <figure><img src="assets/self_portrait.jpg" alt="Self portrait"><figcaption><b>self_portrait</b><span class="d">G (29, 79)</span> &middot; <span class="d">R (37, 176)</span></figcaption></figure>
+      <figure><img src="assets/siren.jpg" alt="Siren"><figcaption><b>siren</b><span class="d">G (&minus;6, 49)</span> &middot; <span class="d">R (&minus;25, 96)</span></figcaption></figure>
+      <figure><img src="assets/three_generations.jpg" alt="Three generations"><figcaption><b>three_generations</b><span class="d">G (14, 53)</span> &middot; <span class="d">R (11, 111)</span></figcaption></figure>
+      <figure><img src="assets/cathedral.jpg" alt="Cathedral"><figcaption><b>cathedral</b><span class="d">G (2, 5)</span> &middot; <span class="d">R (3, 12)</span></figcaption></figure>
+      <figure><img src="assets/monastery.jpg" alt="Monastery"><figcaption><b>monastery</b><span class="d">G (2, &minus;3)</span> &middot; <span class="d">R (3, 3)</span></figcaption></figure>
+      <figure><img src="assets/tobolsk.jpg" alt="Tobolsk"><figcaption><b>tobolsk</b><span class="d">G (3, 3)</span> &middot; <span class="d">R (3, 7)</span></figcaption></figure>
+      <figure><img src="assets/wharf.jpg" alt="Wharf"><figcaption><b>wharf</b><span class="d">G (&minus;7, 15)</span> &middot; <span class="d">R (&minus;16, 82)</span></figcaption></figure>
+      <figure><img src="assets/ilemselga.jpg" alt="Ilemselga"><figcaption><b>ilemselga</b><span class="d">G (7, 40)</span> &middot; <span class="d">R (11, 130)</span></figcaption></figure>
+      <figure><img src="assets/religous_painting.jpg" alt="Religious painting"><figcaption><b>religous_painting</b><span class="d">G (3, 28)</span> &middot; <span class="d">R (7, 69)</span></figcaption></figure>
+    </div>
+  </section>
+
+  <!-- ────────────────────────────────────────────────────────── -->
+  <section>
+    <h2><span class="eyebrow">Part 3</span>Additional Plates from the Collection</h2>
+    <div class="prose">
+      <p>Three further glass plates downloaded directly from the Library of Congress
+      <a href="https://www.loc.gov/collections/prokudin-gorskii/">Prokudin-Gorskii collection</a>
+      and run through the same pipeline with no changes or per-image tuning. Each is a full three-frame
+      negative of roughly the same size as the course images (~3,800&nbsp;&times;&nbsp;9,700&nbsp;px).</p>
+    </div>
+    <div class="figs large" style="margin-top:26px">
+      <figure><img src="assets/pole_makov.jpg" alt="Pole makov, a field of poppies"><figcaption><b><a href="https://www.loc.gov/item/2018679115/">Pole makov</a></b><span class="d">G (&minus;1, 12)</span> &middot; <span class="d">R (&minus;3, 97)</span></figcaption></figure>
+      <figure><img src="assets/lugano.jpg" alt="Lugano, Switzerland"><figcaption><b><a href="https://www.loc.gov/item/2018679127/">Lugano</a></b><span class="d">G (7, 55)</span> &middot; <span class="d">R (32, 121)</span></figcaption></figure>
+      <figure><img src="assets/na_riechkie.jpg" alt="Na riechkie, by the river"><figcaption><b><a href="https://www.loc.gov/item/2018679117/">Na ri&#265;chki&#265;</a></b><span class="d">G (18, 36)</span> &middot; <span class="d">R (24, 65)</span></figcaption></figure>
+    </div>
+  </section>
+
+  <!-- ────────────────────────────────────────────────────────── -->
+  <section>
+    <h2><span class="eyebrow">Results</span>Computed Displacements</h2>
+    <table class="offsets">
+      <thead>
+        <tr><th>Image</th><th>Green &rarr; Blue</th><th>Red &rarr; Blue</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>cathedral</td><td class="num">(2, 5)</td><td class="num">(3, 12)</td></tr>
+        <tr><td>monastery</td><td class="num">(2, &minus;3)</td><td class="num">(3, 3)</td></tr>
+        <tr><td>tobolsk</td><td class="num">(3, 3)</td><td class="num">(3, 7)</td></tr>
+        <tr><td>church</td><td class="num">(4, 25)</td><td class="num">(&minus;4, 58)</td></tr>
+        <tr><td>emir</td><td class="num">(24, 49)</td><td class="num">(42, 105)</td></tr>
+        <tr><td>harvesters</td><td class="num">(17, 60)</td><td class="num">(14, 124)</td></tr>
+        <tr><td>icon</td><td class="num">(17, 41)</td><td class="num">(22, 89)</td></tr>
+        <tr><td>melons</td><td class="num">(10, 81)</td><td class="num">(13, 177)</td></tr>
+        <tr><td>self_portrait</td><td class="num">(29, 79)</td><td class="num">(37, 176)</td></tr>
+        <tr><td>siren</td><td class="num">(&minus;6, 49)</td><td class="num">(&minus;25, 96)</td></tr>
+        <tr><td>three_generations</td><td class="num">(14, 53)</td><td class="num">(11, 111)</td></tr>
+        <tr><td>wharf</td><td class="num">(&minus;7, 15)</td><td class="num">(&minus;16, 82)</td></tr>
+        <tr><td>ilemselga</td><td class="num">(7, 40)</td><td class="num">(11, 130)</td></tr>
+        <tr><td>religous_painting</td><td class="num">(3, 28)</td><td class="num">(7, 69)</td></tr>
+        <tr class="sep"><td>Pole makov <em>(LoC)</em></td><td class="num">(&minus;1, 12)</td><td class="num">(&minus;3, 97)</td></tr>
+        <tr><td>Lugano <em>(LoC)</em></td><td class="num">(7, 55)</td><td class="num">(32, 121)</td></tr>
+        <tr><td>Na ri&#265;chki&#265; <em>(LoC)</em></td><td class="num">(18, 36)</td><td class="num">(24, 65)</td></tr>
+      </tbody>
+      <caption>Displacements are (x, y) in pixels at full resolution, positive x rightward and positive y downward, measured relative to the blue channel.</caption>
+    </table>
+    <p class="note">All 17 images align with no failures. The colored bands along image edges are the plates&rsquo; raw scan borders (automatic cropping was not implemented), not misalignment.</p>
+  </section>
+
+  <footer>CS 180 &middot; Fall 2026</footer>
+
+</div>
+</body>
+</html>

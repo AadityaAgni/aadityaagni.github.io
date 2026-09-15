@@ -1,0 +1,164 @@
+{
+ "cathedral": {
+  "green": [
+   2,
+   5
+  ],
+  "red": [
+   3,
+   12
+  ],
+  "file": "cathedral.jpg"
+ },
+ "monastery": {
+  "green": [
+   2,
+   -3
+  ],
+  "red": [
+   3,
+   3
+  ],
+  "file": "monastery.jpg"
+ },
+ "tobolsk": {
+  "green": [
+   3,
+   3
+  ],
+  "red": [
+   3,
+   7
+  ],
+  "file": "tobolsk.jpg"
+ },
+ "church": {
+  "green": [
+   4,
+   25
+  ],
+  "red": [
+   -4,
+   58
+  ],
+  "file": "church.tif",
+  "red_vs_blue": [
+   -4,
+   58
+  ]
+ },
+ "emir": {
+  "green": [
+   24,
+   49
+  ],
+  "red": [
+   42,
+   105
+  ],
+  "file": "emir.tif",
+  "red_vs_blue": [
+   -284,
+   639
+  ]
+ },
+ "harvesters": {
+  "green": [
+   17,
+   60
+  ],
+  "red": [
+   14,
+   124
+  ],
+  "file": "harvesters.tif"
+ },
+ "icon": {
+  "green": [
+   17,
+   41
+  ],
+  "red": [
+   22,
+   89
+  ],
+  "file": "icon.tif"
+ },
+ "ilemselga": {
+  "green": [
+   7,
+   40
+  ],
+  "red": [
+   11,
+   130
+  ],
+  "file": "ilemselga.tif"
+ },
+ "melons": {
+  "green": [
+   10,
+   81
+  ],
+  "red": [
+   13,
+   177
+  ],
+  "file": "melons.tif"
+ },
+ "religous_painting": {
+  "green": [
+   3,
+   28
+  ],
+  "red": [
+   7,
+   69
+  ],
+  "file": "religous_painting.tif"
+ },
+ "self_portrait": {
+  "green": [
+   29,
+   79
+  ],
+  "red": [
+   37,
+   176
+  ],
+  "file": "self_portrait.tif"
+ },
+ "siren": {
+  "green": [
+   -6,
+   49
+  ],
+  "red": [
+   -25,
+   96
+  ],
+  "file": "siren.tif"
+ },
+ "three_generations": {
+  "green": [
+   14,
+   53
+  ],
+  "red": [
+   11,
+   111
+  ],
+  "file": "three_generations.tif"
+ },
+ "wharf": {
+  "green": [
+   -7,
+   15
+  ],
+  "red": [
+   -16,
+   82
+  ],
+  "file": "wharf.tif"
+ }
+}
