@@ -15,3 +15,6 @@ python colorize.py --imname data/church.tif --out results/church.jpg
 # Single-scale search over [-15, 15]
 python colorize.py --imname data/cathedral.jpg --out results/cathedral.jpg --single-scale
 ```
+
+
+Website: https://aadityaagni.github.io/proj1/
