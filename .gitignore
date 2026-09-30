@@ -7,3 +7,7 @@ __pycache__/
 proj1/out_fname.jpg
 
 .DS_Store
+
+# proj2 generated results — the site renders from proj2/assets/, and these
+# regenerate by running proj2/code/main.py
+proj2/output/
