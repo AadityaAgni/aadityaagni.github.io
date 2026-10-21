@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Project 3: Flow Matching — CS 180</title>
+<link rel="stylesheet" href="../style.css">
+<style>
+  /* ── proj2 additions, built on the shared palette ──────────────── */
+  .prose { max-width: none; }
+  .prose p { margin: 0 0 16px; }
+  .prose p:last-child { margin-bottom: 0; }
+  .prose code {
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+    font-size: .86em;
+    background: var(--bg-alt);
+    border: 1px solid var(--rule);
+    border-radius: 3px;
+    padding: .08em .34em;
+  }
+
+  .figs {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+    gap: 26px 22px;
+    margin-top: 26px;
+  }
+  .figs.two   { grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); }
+  .figs.three { grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); }
+  .figs.four  { grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); }
+  .figs.five  { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
+  .figs.large { grid-template-columns: 1fr; gap: 44px; }
+  .figs.large figure { width: min(100%, 70vh); margin: 0 auto; }
+  .figs figure { margin: 0; }
+  .figs img {
+    width: 100%;
+    height: auto;
+    display: block;
+    background: var(--card);
+    padding: 6px;
+    border: 1px solid var(--rule);
+    border-radius: 4px;
+    box-shadow: var(--shadow);
+    transition: transform .22s ease, box-shadow .22s ease;
+  }
+  .figs img:hover { transform: translateY(-3px); box-shadow: var(--shadow-lift); }
+  figcaption {
+    font-family: var(--sans);
+    font-size: .78rem;
+    line-height: 1.5;
+    color: var(--muted);
+    margin-top: 9px;
+    text-align: center;
+  }
+  figcaption b {
+    display: block;
+    font-weight: 600;
+    letter-spacing: .04em;
+    color: var(--fg);
+    margin-bottom: 2px;
+  }
+  figcaption .d { white-space: nowrap; }
+
+  table.data {
+    width: 100%;
+    border-collapse: collapse;
+    font-family: var(--sans);
+    font-size: .84rem;
+    margin-top: 26px;
+  }
+  table.data th, table.data td {
+    text-align: left;
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--rule);
+  }
+  table.data th {
+    font-weight: 600;
+    font-size: .72rem;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    color: var(--accent);
+  }
+  table.data td.num { font-variant-numeric: tabular-nums; white-space: nowrap; }
+  table.data caption {
+    caption-side: bottom;
+    text-align: left;
+    padding-top: 12px;
+    color: var(--muted);
+    font-size: .78rem;
+  }
+
+  .callout {
+    border-left: 3px solid var(--accent-soft);
+    background: var(--bg-alt);
+    border-radius: 0 6px 6px 0;
+    padding: 16px 20px;
+    margin: 26px 0 0;
+  }
+  .callout p { margin: 0 0 12px; }
+  .callout p:last-child { margin-bottom: 0; }
+
+  .note {
+    font-family: var(--sans);
+    font-size: .8rem;
+    color: var(--muted);
+    margin: 14px 0 0;
+  }
+  .note code { font-size: .92em; }
+
+  h3.sub {
+    font-family: var(--sans);
+    font-size: .78rem;
+    font-weight: 600;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin: 44px 0 0;
+  }
+
+  pre.code {
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+    font-size: .76rem;
+    line-height: 1.6;
+    background: var(--card);
+    border: 1px solid var(--rule);
+    border-radius: 6px;
+    padding: 16px 18px;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+    margin: 0 0 22px;
+    box-shadow: var(--shadow);
+  }
+  pre.code .c { color: var(--muted); }
+
+
+  .prose a { color: var(--accent); text-decoration: none; border-bottom: 1px solid var(--rule); }
+  .prose a:hover { border-bottom-color: var(--accent); }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <a class="back" href="../index.html">All projects</a>
+
+  <header class="page-head">
+    <span class="eyebrow">Project 3</span>
+    <h1>Flow Matching</h1>
+    <p class="tagline">Sampling from a pretrained flow model, then training one from scratch on MNIST.</p>
+  </header>
+
+  <section>
+    <h2><span class="eyebrow">Part A</span>Exploring the Power of Flow Models</h2>
+    <div class="prose">
+      <p>All of Part A uses PixNerd-XXL-P16-T2I with seed 180, Euler step size <code>h = 0.02</code>, and CFG weight <code>w = 7</code> in Section 3.</p>
+    </div>
+
+    <h3 class="sub">1.1 Noisy training inputs</h3>
+    <pre class="code">def interpolate(image, noise, t):
+    return (1-t)*noise + t*image</pre>
+    <div class="figs large">
+      <figure><img src="assets/parta/training_inputs.jpg" alt="Original and three noisy images"><figcaption><b>Original and x<sub>t</sub> at t = 0.25, 0.50, 0.75</b></figcaption></figure>
+    </div>
+
+    <h3 class="sub">1.2 Classical denoising</h3>
+    <div class="prose"><p>Amplitude is restored with <code>x/t</code> before blurring. The best blur removes the noise but takes the detail with it.</p></div>
+    <div class="figs three">
+      <figure><img src="assets/parta/blur_0.25.jpg" alt=""><figcaption><b>t = 0.25</b></figcaption></figure>
+      <figure><img src="assets/parta/blur_0.5.jpg" alt=""><figcaption><b>t = 0.50</b></figcaption></figure>
+      <figure><img src="assets/parta/blur_0.75.jpg" alt=""><figcaption><b>t = 0.75</b></figcaption></figure>
+    </div>
+
+    <h3 class="sub">1.3 One-step denoising</h3>
+    <pre class="code">def one_step_denoise(x, t, condition, predict_velocity):
+    velocity = predict_velocity(x, t, condition)
+    return x + (1-t)*velocity</pre>
+    <div class="figs three">
+      <figure><img src="assets/parta/one_step_0.25.jpg" alt=""><figcaption><b>t = 0.25</b>original / noisy / estimate</figcaption></figure>
+      <figure><img src="assets/parta/one_step_0.5.jpg" alt=""><figcaption><b>t = 0.50</b></figcaption></figure>
+      <figure><img src="assets/parta/one_step_0.75.jpg" alt=""><figcaption><b>t = 0.75</b></figcaption></figure>
+    </div>
+    <div class="prose"><p>The estimate degrades as t falls: at 0.75 it is close to the original, at 0.25 the model invents plausible structure that is not there.</p></div>
+
+    <h3 class="sub">1.4 Visualizing velocity</h3>
+    <div class="figs large">
+      <figure><img src="assets/parta/velocity_original.jpg" alt="Original image"><figcaption><b>Original</b></figcaption></figure>
+    </div>
+    <div class="figs large">
+      <figure><img src="assets/parta/velocity_0.25.jpg" alt=""><figcaption><b>t = 0.25</b>x<sub>t</sub> / predicted update / ground-truth update / RMS error</figcaption></figure>
+      <figure><img src="assets/parta/velocity_0.50.jpg" alt=""><figcaption><b>t = 0.50</b></figcaption></figure>
+      <figure><img src="assets/parta/velocity_0.75.jpg" alt=""><figcaption><b>t = 0.75</b></figcaption></figure>
+    </div>
+    <div class="prose"><p>The predicted update is a smooth, low-frequency version of the ground-truth update, which still carries the sampled noise. Error concentrates on edges and on the fur texture, and falls as t rises and less of the update is left to predict.</p></div>
+
+    <h3 class="sub">1.5 Iterative denoising with Euler sampling</h3>
+    <pre class="code">@torch.inference_mode()
+def euler_sample(x_start, t_start, step_size, velocity):
+    curr_t = t_start
+    curr_x = x_start
+
+    states = [(curr_t, x_start)]
+    num_updates = 0
+    while curr_t&lt;1:
+      step = min(1-curr_t, step_size)
+      curr_vel = velocity(curr_x, curr_t)
+      curr_x = curr_x + step * curr_vel
+      curr_t += step
+      num_updates += 1
+      if num_updates % 5 == 0 or curr_t == 1:
+        states.append((curr_t, curr_x))
+    return curr_x, states</pre>
+    <div class="figs large">
+      <figure><img src="assets/parta/trajectory.jpg" alt="Euler trajectory"><figcaption><b>25 Euler updates from t = 0.50</b>initial state, every fifth update, final</figcaption></figure>
+      <figure><img src="assets/parta/comparison.jpg" alt="Four-way comparison"><figcaption><b>Same noisy input, three methods</b></figcaption></figure>
+    </div>
+    <table class="data">
+      <caption>Mean squared error against the original image, from the same t = 0.50 input.</caption>
+      <thead><tr><th>Method</th><th>MSE</th></tr></thead>
+      <tbody>
+        <tr><td>Gaussian blur</td><td class="num">0.00724</td></tr>
+        <tr><td>One-step</td><td class="num">0.00315</td></tr>
+        <tr><td>Euler, 25 steps</td><td class="num">0.00375</td></tr>
+      </tbody>
+    </table>
+    <div class="prose"><p>One-step scores the lowest MSE but is visibly soft, because averaging over everything the image could have been is exactly what MSE rewards. Euler is slightly worse by that measure and clearly better by eye: it recovers whisker and fur detail that one-step smooths away.</p></div>
+
+    <h3 class="sub">1.6 Generating images from noise</h3>
+    <div class="figs large">
+      <figure><img src="assets/parta/conditional_samples.jpg" alt="Five samples from noise"><figcaption><b>Five samples</b>"a high quality photo", 50 Euler updates</figcaption></figure>
+    </div>
+    <div class="prose"><p>All five come out as portraits of people, so the generic prompt is not neutral. Quality is uneven: anatomy is distorted in two of the five and faces are blurred in another.</p></div>
+
+    <h3 class="sub">2.1 Classifier-free guidance</h3>
+    <pre class="code">def cfg_velocity(x, t, condition, w, predict_velocity, null_condition=''):
+    conditional_velocity = predict_velocity(x, t, condition)
+    return conditional_velocity + w * (conditional_velocity - predict_velocity(x, t, null_condition))</pre>
+    <div class="figs large">
+      <figure><img src="assets/parta/cfg_samples.jpg" alt="Five CFG samples"><figcaption><b>Same five noises, w = 7</b></figcaption></figure>
+    </div>
+    <div class="prose"><p>Every sample is now a clean, sharply lit studio portrait, and the distortions are gone. The cost is diversity: all five converge on the same head-and-shoulders framing against a dark background, where the unguided set at least varied in pose and crop.</p></div>
+
+    <h3 class="sub">3.1 Image-to-image editing</h3>
+    <pre class="code">def edit(image, noise, t_start, condition, predict_velocity, w=7, step_size=0.02):
+    ct = t_start
+    cx = t_start*image + (1-t_start)*noise
+
+    while ct &lt; 1:
+      step = min(1-ct, step_size)
+      velocity = cfg_velocity(cx, ct, condition, w, predict_velocity)
+      cx = cx + step * velocity
+      ct += step
+    return cx</pre>
+    <div class="figs large">
+      <figure><img src="assets/parta/edit_campanile.jpg" alt=""><figcaption><b>Campanile</b>t<sub>start</sub> = 0.02 to 0.50</figcaption></figure>
+      <figure><img src="assets/parta/edit_my_image_1.jpg" alt=""><figcaption><b>My image 1</b></figcaption></figure>
+      <figure><img src="assets/parta/edit_my_image_2.jpg" alt=""><figcaption><b>My image 2</b></figcaption></figure>
+    </div>
+    <div class="prose"><p>At t = 0.02 almost nothing of the input survives and the model returns a generic photo. By t = 0.25 the layout is back and only texture and lighting have been reworked.</p></div>
+
+    <h3 class="sub">Editing hand-drawn and web images</h3>
+    <div class="figs large">
+      <figure><img src="assets/parta/edit_web_image.jpg" alt=""><figcaption><b>From the web</b></figcaption></figure>
+      <figure><img src="assets/parta/edit_drawing_1.jpg" alt=""><figcaption><b>Hand drawing 1</b></figcaption></figure>
+      <figure><img src="assets/parta/edit_drawing_2.jpg" alt=""><figcaption><b>Hand drawing 2</b></figcaption></figure>
+    </div>
+    <div class="prose"><p>The drawings need a smaller starting time than the photographs to become plausible, since a flat sketch is further from the model's distribution than a photo is.</p></div>
+
+    <h3 class="sub">3.2 Text-guided editing</h3>
+    <div class="figs large">
+      <figure><img src="assets/parta/text_edit_campanile.jpg" alt=""><figcaption><b>Campanile</b>"a photograph of a sword sticking into the ground"</figcaption></figure>
+      <figure><img src="assets/parta/text_edit_my_image_1.jpg" alt=""><figcaption><b>My image 1</b>"a photograph of a cyborg dog"</figcaption></figure>
+      <figure><img src="assets/parta/text_edit_my_image_2.jpg" alt=""><figcaption><b>My image 2</b>"a photo of a cyberpunk futuristic city"</figcaption></figure>
+    </div>
+    <div class="prose"><p>The starting time sets how much of the prompt gets through. Small values follow the prompt and discard the image; large values keep the image and the prompt only tints it.</p></div>
+
+    <h3 class="sub">3.3 Visual anagrams</h3>
+    <pre class="code">def visual_anagrams(noise, condition_a, condition_b, predict_velocity, w=7, step_size=0.02):
+    ct = 0
+    cx = noise
+
+    while ct &lt; 1:
+      step = min(1-ct, step_size)
+      velocity_a = cfg_velocity(cx, ct, condition_a, w, predict_velocity)
+      velocity_b = rotate180(cfg_velocity(rotate180(cx), ct, condition_b, w, predict_velocity))
+      cx = cx + step * (velocity_a + velocity_b) / 2
+      ct += step
+    return cx</pre>
+    <div class="figs large">
+      <figure><img src="assets/parta/anagram_views_0.jpg" alt=""><figcaption><b>Oak tree / lumberjack</b>upright and rotated 180&deg;</figcaption></figure>
+      <figure><img src="assets/parta/anagram_views_1.jpg" alt=""><figcaption><b>Cave / snowy mountain</b></figcaption></figure>
+    </div>
+
+    <h3 class="sub">3.4 Hybrid images</h3>
+    <pre class="code">def make_hybrids(noise, condition_a, condition_b, predict_velocity, w=7, step_size=0.02):
+  ct = 0
+  cx = noise
+
+  while ct &lt; 1:
+    step = min(1-ct, step_size)
+    velocity_a = cfg_velocity(cx, ct, condition_a, w, predict_velocity)
+    velocity_b = cfg_velocity(cx, ct, condition_b, w, predict_velocity)
+
+    cx = cx + step * (lowpass(velocity_a) + (velocity_b - lowpass(velocity_b)))
+    ct += step
+  return cx</pre>
+    <div class="figs two">
+      <figure><img src="assets/parta/hybrid_0.jpg" alt=""><figcaption><b>Skeleton from afar, soccer player up close</b></figcaption></figure>
+      <figure><img src="assets/parta/hybrid_1.jpg" alt=""><figcaption><b>Cat from afar, rainforest up close</b></figcaption></figure>
+    </div>
+  </section>
+
+  <section>
+    <h2><span class="eyebrow">Part B</span>Flow Matching from Scratch</h2>
+    <div class="prose">
+      <p>A UNet trained on MNIST, first as a single-step denoiser, then as a flow model conditioned on time and on class.</p>
+    </div>
+
+    <h3 class="sub">1.1 The UNet</h3>
+    <div class="figs two">
+      <figure><img src="assets/spec/unconditional_arch.png" alt="Unconditional UNet architecture"><figcaption><b>Unconditional UNet</b></figcaption></figure>
+      <figure><img src="assets/spec/atomic_ops_new.png" alt="Atomic operations"><figcaption><b>Atomic operations</b></figcaption></figure>
+    </div>
+    <div class="figs large">
+      <figure><img src="assets/partb/noising.png" alt="Noising process"><figcaption><b>Noising process</b>&sigma; = 0, 0.2, 0.4, 0.5, 0.6, 0.8, 1.0 down the rows</figcaption></figure>
+    </div>
+
+    <h3 class="sub">1.2.1 Training the denoiser</h3>
+    <div class="figs two">
+      <figure><img src="assets/partb/denoiser_sigma0.5_loss.png" alt="Loss curve"><figcaption><b>Training loss</b>&sigma; = 0.5</figcaption></figure>
+    </div>
+    <div class="figs two">
+      <figure><img src="assets/partb/denoise_epoch1.png" alt=""><figcaption><b>Epoch 1</b>clean / noisy / denoised</figcaption></figure>
+      <figure><img src="assets/partb/denoise_epoch5.png" alt=""><figcaption><b>Epoch 5</b></figcaption></figure>
+    </div>
+
+    <h3 class="sub">1.2.2 Out-of-distribution noise levels</h3>
+    <div class="figs large">
+      <figure><img src="assets/partb/ood_denoising.png" alt="OOD denoising"><figcaption><b>Trained at &sigma; = 0.5, tested across &sigma;</b>noisy above, denoised below, for three digits</figcaption></figure>
+    </div>
+    <div class="prose"><p>The model holds up to about &sigma; = 0.6 and fails past it. Trained on one noise level, it has learned how much signal to expect, so at &sigma; = 1.0 it over-corrects and produces a confident but wrong digit.</p></div>
+
+    <h3 class="sub">1.2.3 Denoising pure noise</h3>
+    <div class="figs two">
+      <figure><img src="assets/partb/pure_noise_denoiser_loss.png" alt="Loss curve"><figcaption><b>Training loss</b></figcaption></figure>
+    </div>
+    <div class="figs two">
+      <figure><img src="assets/partb/pure_noise_epoch1.png" alt=""><figcaption><b>Epoch 1</b></figcaption></figure>
+      <figure><img src="assets/partb/pure_noise_epoch5.png" alt=""><figcaption><b>Epoch 5</b></figcaption></figure>
+    </div>
+    <div class="prose">
+      <p>Every output is the same faint grey blob, and the loss plateaus almost immediately. The input carries no information about which digit to produce, so under MSE the best possible prediction is the one minimising squared distance to every training image at once, which is their mean. The blob is the average MNIST digit: bright in the centre where strokes usually fall, dark at the edges where they rarely do.</p>
+    </div>
+
+    <h3 class="sub">2.1 Time conditioning</h3>
+    <div class="figs two">
+      <figure><img src="assets/spec/conditional_arch_fm.png" alt="Conditional UNet architecture"><figcaption><b>Time-conditioned UNet</b></figcaption></figure>
+      <figure><img src="assets/spec/fc_long.png" alt="FCBlock"><figcaption><b>FCBlock</b></figcaption></figure>
+    </div>
+    <pre class="code">def time_fm_forward(unet, x_1, num_ts):
+    x_0 = torch.randn_like(x_1)
+    t = torch.rand(x_1.shape[0], device=x_1.device)
+    x_t = (1 - t[:, None, None, None]) * x_0 + t[:, None, None, None] * x_1
+    return F.mse_loss(unet(x_t, t), x_1 - x_0)</pre>
+    <div class="figs two">
+      <figure><img src="assets/partb/time_conditioned_fm_loss.png" alt="Loss curve"><figcaption><b>Training loss</b>10 epochs</figcaption></figure>
+    </div>
+
+    <h3 class="sub">2.3 Sampling, time-conditioned</h3>
+    <div class="figs three">
+      <figure><img src="assets/partb/time_fm_epoch1.png" alt=""><figcaption><b>Epoch 1</b></figcaption></figure>
+      <figure><img src="assets/partb/time_fm_epoch5.png" alt=""><figcaption><b>Epoch 5</b></figcaption></figure>
+      <figure><img src="assets/partb/time_fm_epoch10.png" alt=""><figcaption><b>Epoch 10</b></figcaption></figure>
+    </div>
+    <div class="prose"><p>Digit-like shapes appear by epoch 1 but many are unreadable. By epoch 10 most samples are legible, with no control over which digit comes out.</p></div>
+
+    <h3 class="sub">2.4 Class conditioning</h3>
+    <pre class="code">c = F.one_hot(c, self.num_classes).float()
+if mask is not None:
+    c = c * mask.view(-1, 1)
+...
+x4 = c1 * self.unflatten(self.flatten(x3)) + t1
+x5 = c2 * self.u1(torch.cat([x4, x3], 1)) + t2</pre>
+    <div class="figs two">
+      <figure><img src="assets/partb/class_fm_loss.png" alt="Loss curve"><figcaption><b>Training loss</b>10 epochs, class dropout 0.1</figcaption></figure>
+    </div>
+
+    <h3 class="sub">2.6 Sampling, class-conditioned</h3>
+    <div class="figs three">
+      <figure><img src="assets/partb/class_fm_epoch1.png" alt=""><figcaption><b>Epoch 1</b>four of each digit</figcaption></figure>
+      <figure><img src="assets/partb/class_fm_epoch5.png" alt=""><figcaption><b>Epoch 5</b></figcaption></figure>
+      <figure><img src="assets/partb/class_fm_epoch10.png" alt=""><figcaption><b>Epoch 10</b></figcaption></figure>
+    </div>
+    <div class="prose"><p>Conditioning on the label fixes both problems at once: every sample is the digit that was asked for, and epoch 1 is already cleaner than epoch 10 of the time-only model.</p></div>
+
+    <h3 class="sub">Removing the learning rate scheduler</h3>
+    <pre class="code">class_fm = train_class_fm(1e-2, True, 'class_fm')
+# constant lr equal to the scheduler's final lr, to avoid instability from staying at 1e-2
+class_fm_nosched = train_class_fm(1e-3, False, 'class_fm_nosched')</pre>
+    <div class="figs three">
+      <figure><img src="assets/partb/class_fm_nosched_epoch1.png" alt=""><figcaption><b>Epoch 1</b>no scheduler</figcaption></figure>
+      <figure><img src="assets/partb/class_fm_nosched_epoch5.png" alt=""><figcaption><b>Epoch 5</b></figcaption></figure>
+      <figure><img src="assets/partb/class_fm_nosched_epoch10.png" alt=""><figcaption><b>Epoch 10</b></figcaption></figure>
+    </div>
+    <div class="figs two">
+      <figure><img src="assets/partb/class_fm_nosched_loss.png" alt="Loss curve"><figcaption><b>Training loss</b>constant lr = 1e-3</figcaption></figure>
+    </div>
+    <div class="prose">
+      <p>The exponential schedule decays from 1e-2 by <code>0.1<sup>1/10</sup></code> each epoch, ending at 1e-3. Holding the rate at 1e-2 without it is unstable, so I trained at a constant 1e-3, the value the schedule finishes on. Final sample quality matches, and the loss curve is flatter from the start rather than dropping sharply and then settling.</p>
+    </div>
+  </section>
+
+  <footer>CS 180 &middot; Fall 2026</footer>
+
+</div>
+</body>
+</html>
